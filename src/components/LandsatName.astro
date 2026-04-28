@@ -22,7 +22,7 @@ const badWordResponsesSerialized = JSON.stringify(badWordResponses);
 
 <div class="landsat-wrapper" id="landsat-wrapper">
   <header class="page-header">
-    <h1 class="page-title">NASA Earth Name Generator</h1>
+    <h1 class="page-title">NASA Name Generator</h1>
   </header>
 
   <!-- QR Popup -->
@@ -57,37 +57,35 @@ const badWordResponsesSerialized = JSON.stringify(badWordResponses);
       <button id="about-close-btn" class="about-close-btn" aria-label="Close about dialog">&times;</button>
       <h2>About NASA Name Generator</h2>
       <p>
-        <strong>NASA Name Generator</strong> is a browser-based <em>Your Name in Landsat</em> style tool. It lets you type a name or short phrase and render it as a row of Landsat-style Earth letter tiles, then download or share the result.
+        <strong>NASA Name Generator</strong> lets you turn a name or short phrase into a Landsat-style image made from satellite photo letter tiles. This NASA name generator is a simple, playful way to see your text re-created with real Earth imagery.
       </p>
       <p>
-        The page is written for the search intent around <em>your name in landsat</em>, <em>landsat name generator</em>, and <em>NASA name generator</em>, but the product itself stays simple: type text, preview the composition, inspect letter locations, and export or share what you made.
+        Each letter is matched to a satellite image that visually resembles that character. You can preview the result, explore where each image came from, and save or share your final composition.
       </p>
-      <h3>What This Tool Does</h3>
+      <h3>What You Can Do</h3>
       <p>
-        Instead of a standard font, each letter is shown as an Earth-image tile selected to resemble that character. You can enter letters and spaces, generate a name image, hover over letters to see location details, click a letter to keep its location visible, and save or share the finished composition.
+        Type letters and spaces, generate your name image, hover over any tile to see its location, click a tile to keep that location visible, then download or share what you made.
       </p>
       <h3>How to Use It</h3>
       <ol>
-        <li>Enter a name, nickname, or short phrase using letters from A to Z and spaces.</li>
-        <li>Click Enter to generate the Landsat-style name image.</li>
-        <li>Hover over any letter to view its source location, or click a letter to pin that location information.</li>
-        <li>Use Download PNG to save the result, or open the share dialog to copy a link or show the QR code for the current version.</li>
+        <li>Enter a name, nickname, or short phrase using letters A to Z and spaces.</li>
+        <li>Click Enter to generate your Landsat-style image.</li>
+        <li>Hover over any letter to view where that image was captured, or click it to pin the location details.</li>
+        <li>Use Download PNG to save your image, or open the share dialog to copy a link or show a QR code.</li>
       </ol>
-      <h3>Current Features</h3>
+      <h3>Features</h3>
       <ul>
-        <li>Text input for names and short phrases</li>
-        <li>Letters-and-spaces validation</li>
-        <li>Landsat-style Earth-image letter composition</li>
-        <li>Per-letter location details on hover and click</li>
-        <li>PNG download</li>
-        <li>Share link and QR-code sharing for the current composition</li>
+        <li>Create Landsat-style names from letters and spaces</li>
+        <li>See the source location for each letter tile</li>
+        <li>Download your result as a PNG</li>
+        <li>Share your result with a link or QR code</li>
       </ul>
-      <h3>What It Is Not</h3>
+      <h3>Good to Know</h3>
       <p>
-        This is not a full design editor, an AI image generator, or an official NASA product. It is a focused generator built around the Landsat name-image idea and intended to make the main flow fast: type, preview, download, and share.
+        This is not an official NASA product, and it is not a full design editor or AI image generator. It is a lightweight experience focused on one thing: turning your text into a Landsat-inspired name image.
       </p>
       <p>
-        The project is inspired by public NASA and USGS Earth observation outreach and by the original <em>Your Name in Landsat</em> experience. It is an independent project and is not an official NASA website, product, or service.
+        The project is inspired by public NASA and USGS Earth observation imagery and the original <em>Your Name in Landsat</em> experience. It is an independent project created for exploration and sharing.
       </p>
     </div>
   </div>
@@ -98,7 +96,7 @@ const badWordResponsesSerialized = JSON.stringify(badWordResponses);
   <!-- Bottom controls -->
   <div class="bottom-controls" id="bottom-controls">
     <div class="textBelowTitle active" id="textBelowTitle">
-      Type in your name to see it spelled out in Landsat imagery of Earth!
+      Use this NASA name generator to see your name spelled out in Landsat imagery of Earth.
       <span class="help-icon" id="helpIcon"><i class="fas fa-question-circle"></i></span>
     </div>
     <form class="container" id="container">
@@ -159,7 +157,7 @@ const badWordResponsesSerialized = JSON.stringify(badWordResponses);
     <button class="about-trigger" id="aboutBtn" type="button">About</button>
 
     <p class="footer-note">
-      This project was implemented based on <a href="https://science.nasa.gov/specials/your-name-in-landsat/" target="_blank" rel="nofollow noopener noreferrer">Your Name in Landsat</a>, with enhanced functionality. The copyright for the images used in this project belongs to the original project.
+      Inspired by <a href="https://science.nasa.gov/specials/your-name-in-landsat/" target="_blank" rel="nofollow noopener noreferrer">Your Name in Landsat</a>. Image rights belong to the original project and its respective sources.
     </p>
   </div>
 
