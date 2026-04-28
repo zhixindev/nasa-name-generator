@@ -590,6 +590,18 @@ const badWordResponsesSerialized = JSON.stringify(badWordResponses);
     height: auto;
   }
 
+  #final-img {
+    width: auto;
+    max-width: min(100%, 320px);
+    max-height: 180px;
+    object-fit: contain;
+  }
+
+  #qr-img {
+    width: min(220px, 100%);
+    max-width: 220px;
+  }
+
   .qr-description {
     margin-top: 0.5rem;
     margin-bottom: 0.25rem;
@@ -870,6 +882,16 @@ const badWordResponsesSerialized = JSON.stringify(badWordResponses);
 
     .qr-popup-inner img {
       max-width: 80%;
+    }
+
+    #final-img {
+      max-width: min(100%, 240px);
+      max-height: 140px;
+    }
+
+    #qr-img {
+      width: min(180px, 80%);
+      max-width: 180px;
     }
 
     .qr-popup-inner h2 {
