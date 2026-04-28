@@ -1,0 +1,1774 @@
+---
+import { letterData, badWords, badWordResponses } from '../data/letterData';
+
+export interface Props {
+  imagesBasePath?: string;
+  initialWord?: string;
+  initialSequence?: string;
+}
+
+const {
+  imagesBasePath = '/images/letters',
+  initialWord = 'landsat',
+  initialSequence = '',
+} = Astro.props;
+
+const initialWordSerialized = JSON.stringify(initialWord);
+const initialSequenceSerialized = JSON.stringify(initialSequence);
+const letterDataSerialized = JSON.stringify(letterData);
+const badWordsSerialized = JSON.stringify(badWords);
+const badWordResponsesSerialized = JSON.stringify(badWordResponses);
+---
+
+<div class="landsat-wrapper" id="landsat-wrapper">
+  <header class="page-header">
+    <h1 class="page-title">NASA Earth Name Generator</h1>
+  </header>
+
+  <!-- QR Popup -->
+  <div id="qr-popup" class="qr-popup">
+    <div class="qr-popup-inner">
+      <button id="qr-close-btn" class="qr-close-btn" aria-label="Close">&times;</button>
+      <h2>Share Your Name in Landsat</h2>
+      <img id="final-img" alt="Your name rendered" style="display:none" />
+      <p class="qr-description-two" id="info1">
+        The satellite images used in this interactive are part of Landsat's extensive record, spanning more than 50 years.
+      </p>
+      <p class="qr-description-two" id="info3">
+        The Landsat series of Earth-observing satellites are jointly managed by NASA and the <a target="_blank" href="https://www.usgs.gov/landsat-missions">U.S. Geological Survey (USGS)</a>.
+      </p>
+      <p class="qr-scan-text" id="qr-scan-text">Scan to see your name</p>
+      <img id="qr-img" alt="QR Code" />
+      <div class="qr-buttons">
+        <button class="copy-link-btn" id="qr-copy-link-btn">
+          <i class="fas fa-link" id="qr-copy-link-icon"></i>
+          <span id="qr-copy-link-text">Copy Link</span>
+        </button>
+        <button class="copy-link-btn" id="qr-download-btn">
+          <i class="fas fa-download" id="qr-download-icon"></i>
+          <span>Download QR</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="about-popup" class="about-popup">
+    <div class="about-popup-inner">
+      <button id="about-close-btn" class="about-close-btn" aria-label="Close about dialog">&times;</button>
+      <h2>About NASA Name Generator</h2>
+      <p>
+        <strong>NASA Name Generator</strong> is a browser-based <em>Your Name in Landsat</em> style tool. It lets you type a name or short phrase and render it as a row of Landsat-style Earth letter tiles, then download or share the result.
+      </p>
+      <p>
+        The page is written for the search intent around <em>your name in landsat</em>, <em>landsat name generator</em>, and <em>NASA name generator</em>, but the product itself stays simple: type text, preview the composition, inspect letter locations, and export or share what you made.
+      </p>
+      <h3>What This Tool Does</h3>
+      <p>
+        Instead of a standard font, each letter is shown as an Earth-image tile selected to resemble that character. You can enter letters and spaces, generate a name image, hover over letters to see location details, click a letter to keep its location visible, and save or share the finished composition.
+      </p>
+      <h3>How to Use It</h3>
+      <ol>
+        <li>Enter a name, nickname, or short phrase using letters from A to Z and spaces.</li>
+        <li>Click Enter to generate the Landsat-style name image.</li>
+        <li>Hover over any letter to view its source location, or click a letter to pin that location information.</li>
+        <li>Use Download PNG to save the result, or open the share dialog to copy a link or show the QR code for the current version.</li>
+      </ol>
+      <h3>Current Features</h3>
+      <ul>
+        <li>Text input for names and short phrases</li>
+        <li>Letters-and-spaces validation</li>
+        <li>Landsat-style Earth-image letter composition</li>
+        <li>Per-letter location details on hover and click</li>
+        <li>PNG download</li>
+        <li>Share link and QR-code sharing for the current composition</li>
+      </ul>
+      <h3>What It Is Not</h3>
+      <p>
+        This is not a full design editor, an AI image generator, or an official NASA product. It is a focused generator built around the Landsat name-image idea and intended to make the main flow fast: type, preview, download, and share.
+      </p>
+      <p>
+        The project is inspired by public NASA and USGS Earth observation outreach and by the original <em>Your Name in Landsat</em> experience. It is an independent project and is not an official NASA website, product, or service.
+      </p>
+    </div>
+  </div>
+
+  <!-- Images -->
+  <div id="nameBoxes" class="nameBoxes"></div>
+
+  <!-- Bottom controls -->
+  <div class="bottom-controls" id="bottom-controls">
+    <div class="textBelowTitle active" id="textBelowTitle">
+      Type in your name to see it spelled out in Landsat imagery of Earth!
+      <span class="help-icon" id="helpIcon"><i class="fas fa-question-circle"></i></span>
+    </div>
+    <form class="container" id="container">
+      <input
+        type="text"
+        id="nameInput"
+        class="nameInput"
+        placeholder="Enter a name"
+        maxlength="18"
+        autocomplete="off"
+        enterkeyhint="go"
+      />
+      <button id="enterButton" class="searchBar-button enter-btn" type="submit">
+        <b>Enter</b>
+      </button>
+      <a class="searchBar-button icon-btn" id="downloadBtn" href="javascript:void(0)" title="Download as PNG">
+        <i class="fas fa-download"></i>
+      </a>
+      <a class="searchBar-button icon-btn" id="qrCodeBtn" href="javascript:void(0)" title="Share / QR Code">
+        <i class="fas fa-qrcode"></i>
+      </a>
+      <div class="popup arrow-bottom popup-template" id="inputPopup">
+        <div class="popup-wrapper">
+          <p id="popupText">Please enter letters from A-Z</p>
+        </div>
+      </div>
+    </form>
+
+    <!-- Filter buttons -->
+    
+    <div class="location-info" id="locationInfo">
+      <a
+        id="locationTitle"
+        class="location-title active"
+        href="#"
+        target="_blank"
+        rel="noopener noreferrer"
+      ></a>
+      <br />
+      <a
+        id="locationCoordinates"
+        class="location-coordinates active"
+        href="#"
+        target="_blank"
+        rel="noopener noreferrer"
+      ></a>
+    </div>
+
+    <!-- Mobile help content (shown inline) -->
+    <div class="mobile-help" id="mobileHelp">
+      <p><strong>How to use:</strong></p>
+      <p>Type a name and press Enter to see it rendered in Landsat satellite imagery.</p>
+      <p>Hover over any letter image to see the real location where that image was captured.</p>
+      <p>Click on a letter to pin its location info.</p>
+      <p>Download your creation as a PNG or share via QR code.</p>
+    </div>
+
+    <button class="about-trigger" id="aboutBtn" type="button">About</button>
+
+    <p class="footer-note">
+      This project was implemented based on <a href="https://science.nasa.gov/specials/your-name-in-landsat/" target="_blank" rel="nofollow noopener noreferrer">Your Name in Landsat</a>, with enhanced functionality. The copyright for the images used in this project belongs to the original project.
+    </p>
+  </div>
+
+  <!-- Help tooltip -->
+  <div id="helpContainer" class="helpContainer">
+    <button id="help-close-btn" class="help-close-btn" aria-label="Close help">&times;</button>
+    <p><strong>How to use:</strong></p>
+    <p>Type a name and press Enter to see it rendered in Landsat satellite imagery.</p>
+    <p>Hover over any letter image to see the real location where that image was captured.</p>
+    <p>Click on a letter to pin its location info.</p>
+        <p>Download your creation as a PNG or share via QR code.</p>
+  </div>
+
+  </div>
+
+<style>
+  :root {
+    --font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  }
+
+  :global(html),
+  :global(body) {
+    margin: 0;
+    min-height: 100%;
+  }
+
+  :global(body) {
+    overflow-x: hidden;
+  }
+
+  .landsat-wrapper {
+    font-family: var(--font-family);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    min-height: 100vh;
+    width: 100%;
+    background-color: #f5f5f5;
+    position: relative;
+    overflow: hidden;
+    padding: 20px 0;
+    box-sizing: border-box;
+  }
+
+  .page-header {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    padding: 0.5rem 1rem 0;
+    box-sizing: border-box;
+  }
+
+  .page-title {
+    margin: 0;
+    color: #111;
+    font-size: clamp(1.5rem, 4vw, 2.5rem);
+    font-weight: 700;
+    line-height: 1.1;
+    text-align: center;
+  }
+
+  .container {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background: #fff;
+    overflow: visible;
+    padding-right: 0;
+  }
+
+  .nameInput {
+    border: none;
+    background-color: #fff;
+    color: #000;
+    padding: clamp(8px, 2vh, 20px);
+    font-size: clamp(14px, 2vh, 22px);
+    font-family: var(--font-family);
+    min-width: 150px;
+    max-width: 280px;
+    outline: none;
+  }
+
+  .searchBar-button {
+    padding: clamp(8px, 2vh, 20px);
+    border: none;
+    border-left: 1px solid #ccc;
+    border-radius: 0;
+    background-color: #f0f0f0;
+    text-decoration: none;
+    color: #333;
+    cursor: pointer;
+    transition: background-color 0.25s ease;
+    font-size: clamp(14px, 2vh, 22px);
+    font-family: var(--font-family);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .searchBar-button:hover {
+    background-color: #c7c7c7;
+  }
+
+  .searchBar-button.disable {
+    pointer-events: none;
+    background-color: #919191;
+    color: #666;
+  }
+
+  .popup {
+    width: fit-content;
+    max-width: min(320px, calc(100vw - 32px));
+    height: fit-content;
+    position: absolute;
+    text-align: center;
+    z-index: 999;
+    color: #000;
+    flex: none;
+    font-size: 85%;
+    bottom: 50%;
+    left: 50%;
+    transform: translate(-50%, calc(-100% - 12px));
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+
+  .popup.active {
+    opacity: 100%;
+    pointer-events: all;
+  }
+
+  .popup-template {
+    display: none;
+  }
+
+  .popup.arrow-bottom::before {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: calc(50% - 10px);
+    border-width: 8px;
+    border-style: solid;
+    border-color: rgba(0,0,0,0.85) transparent transparent transparent;
+  }
+
+  .popup-wrapper {
+    padding: 8px 14px;
+    border-radius: 4px;
+    background: rgba(0,0,0,0.85);
+    color: #ff5a5f;
+    font-size: 0.875rem;
+    white-space: normal;
+  }
+
+  .textBelowTitle {
+    color: #000;
+    font-size: clamp(12px, 1.75vh, 18px);
+    white-space: normal;
+    word-break: break-word;
+    padding: 0 8px;
+  }
+
+  .nameBoxes {
+    --desktop-tile-max-width: calc((100% - (6 * 0.89%)) / 7);
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: center;
+    align-items: center;
+    user-select: none;
+    height: 50%;
+    width: 90%;
+    max-width: 90%;
+    gap: 1%;
+    flex: 1;
+    padding: 2vh 0;
+    margin-top: clamp(10px, 2vh, 20px);
+    box-sizing: border-box;
+  }
+
+  .nameBoxes :global(img) {
+    min-width: 0;
+    max-width: min(100%, var(--desktop-tile-max-width));
+    max-height: 100%;
+    height: auto;
+    align-self: center;
+    display: block;
+    transform: translateY(20px);
+    transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out, scale 0.25s ease-in-out;
+    opacity: 0;
+    border-radius: 4px;
+    cursor: default;
+  }
+
+  .nameBoxes :global(img.active) {
+    transform: translateY(0);
+    opacity: 100%;
+  }
+
+  .nameBoxes :global(img:hover) {
+    scale: 1.1;
+  }
+
+  @media (hover: none) and (pointer: coarse) {
+    .nameBoxes :global(img:hover) {
+      scale: 1;
+    }
+  }
+
+  .nameBoxes :global(img.selected) {
+    scale: 1.1;
+  }
+
+  .nameBoxes :global(.blankDiv) {
+    width: 2%;
+    height: 5%;
+    align-self: center;
+  }
+
+  .bottom-controls {
+    width: fit-content;
+    max-width: 90vw;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    text-align: center;
+    padding: 6vh 0;
+  }
+
+  .location-info {
+    text-align: center;
+    font-size: clamp(12px, 1.75vh, 20px);
+    font-family: var(--font-family);
+    width: 100%;
+    height: 1.5em;
+  }
+
+  .location-title {
+    font-weight: 700;
+    font-size: 1em;
+    color: #333;
+    text-decoration: none;
+    display: inline;
+    min-height: 1.2em;
+    line-height: 1.2;
+  }
+
+  .mobile-help {
+    display: none;
+  }
+
+  .footer-note {
+    margin: 0.45rem 0 0;
+    max-width: min(720px, 90vw);
+    color: #666;
+    font-size: clamp(9.5px, 1.1vh, 11.5px);
+    line-height: 1.3;
+  }
+
+  .footer-note a {
+    color: inherit;
+  }
+
+  .about-trigger {
+    border: 1px solid #d5d5d5;
+    background: #fff;
+    color: #333;
+    border-radius: 999px;
+    margin-top: 1.35rem;
+    padding: 0.45rem 0.85rem;
+    font-size: 0.78rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+    font-family: var(--font-family);
+  }
+
+  .about-trigger:hover {
+    background: #f3f3f3;
+    border-color: #c3c3c3;
+  }
+
+  .location-coordinates {
+    color: #666;
+    font-size: 0.85em;
+    text-decoration: none;
+    display: inline;
+    min-height: 1.2em;
+    line-height: 1.2;
+  }
+
+  .qr-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+  }
+
+  .about-popup {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .about-popup.active {
+    display: flex;
+    opacity: 100%;
+  }
+
+  .about-popup-inner {
+    position: relative;
+    width: min(680px, 92vw);
+    max-height: 85vh;
+    overflow-y: auto;
+    background: #fff;
+    color: #111;
+    border-radius: 14px;
+    padding: 1.5rem 1.5rem 1.25rem;
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.2);
+  }
+
+  .about-popup-inner h2 {
+    margin: 0 0 0.9rem;
+    font-size: 1.2rem;
+    line-height: 1.2;
+    text-align: left;
+  }
+
+  .about-popup-inner h3 {
+    margin: 1rem 0 0.5rem;
+    font-size: 0.98rem;
+    line-height: 1.3;
+    text-align: left;
+    color: #111;
+  }
+
+  .about-popup-inner p {
+    margin: 0 0 0.85rem;
+    font-size: 0.92rem;
+    line-height: 1.6;
+    color: #333;
+    text-align: left;
+  }
+
+  .about-popup-inner ol,
+  .about-popup-inner ul {
+    margin: 0 0 0.95rem 1.15rem;
+    padding: 0;
+    color: #333;
+  }
+
+  .about-popup-inner li {
+    margin: 0 0 0.45rem;
+    font-size: 0.92rem;
+    line-height: 1.55;
+  }
+
+  .about-close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    color: #666;
+    padding: 0.5rem;
+  }
+
+  .about-close-btn:hover {
+    color: #222;
+  }
+
+  .qr-popup.active {
+    display: flex;
+    opacity: 100%;
+  }
+
+  .qr-popup-inner {
+    position: relative;
+    background: #fff;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    height: fit-content;
+    max-width: 500px;
+    width: 90%;
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    align-items: center;
+    color: #000;
+  }
+
+  .qr-popup-inner h2 {
+    margin: 0.5em 0 0.5rem;
+    align-self: flex-start;
+    user-select: none;
+    font-size: 1.1rem;
+  }
+
+  .qr-popup-inner img {
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    background-color: #fff;
+    margin-top: 0;
+    max-width: 100%;
+    height: auto;
+  }
+
+  .qr-description {
+    margin-top: 0.5rem;
+    margin-bottom: 0.25rem;
+    font-size: 0.75rem;
+    color: #444;
+    text-align: left;
+    line-height: 1.4;
+    align-self: flex-start;
+  }
+
+  .qr-scan-text {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: #333;
+    text-align: center;
+    font-weight: 500;
+  }
+
+  .qr-description-two {
+    margin-top: 0.5rem;
+    margin-bottom: 0.25rem;
+    font-size: 0.8rem;
+    color: #444;
+    text-align: left;
+    line-height: 1.5;
+    align-self: flex-start;
+    max-width: 100%;
+  }
+
+  .qr-description-two a {
+    color: #646cff;
+  }
+
+  .qr-close-btn {
+    color: #000;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: 0;
+    border: none;
+    font-size: 1.5rem;
+    padding: 0.5rem;
+    cursor: pointer;
+    line-height: 1;
+    transition: opacity 0.2s ease;
+    z-index: 10;
+  }
+
+  .qr-close-btn:hover {
+    opacity: 50%;
+  }
+
+  .qr-buttons {
+    display: flex;
+    gap: 8px;
+    margin-top: 1rem;
+    flex-wrap: nowrap;
+    justify-content: center;
+    align-self: center;
+    width: fit-content;
+  }
+
+  .copy-link-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.75rem;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    background-color: #fff;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    font-family: var(--font-family);
+    text-decoration: none;
+    color: #333;
+  }
+
+  .copy-link-btn:hover {
+    background-color: #f0f0f0;
+  }
+
+  .helpContainer {
+    display: none;
+    position: fixed;
+    overflow-y: auto;
+    border-radius: 8px;
+    padding: 1rem;
+    filter: drop-shadow(0 0 10px rgba(0,0,0,0.15));
+    outline: 3px solid #000;
+    color: #000;
+    background-color: #fff;
+    width: 220px;
+    z-index: 500;
+    text-align: left;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    transform: translateY(-100%);
+  }
+
+  .helpContainer.active {
+    display: block;
+  }
+
+  .help-close-btn {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: #666;
+    line-height: 1;
+  }
+
+  .help-close-btn:hover {
+    color: #333;
+  }
+
+  .help-icon {
+    display: inline-flex;
+    margin-left: 8px;
+    font-size: 1em;
+    color: #666;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+    vertical-align: middle;
+  }
+
+  .help-icon:hover {
+    opacity: 0.6;
+  }
+
+  /* Mobile-first responsive styles */
+  @media (max-width: 600px) {
+    .landsat-wrapper {
+      padding: 0.5rem 10px 1rem;
+      min-height: 100svh;
+      height: auto;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      gap: clamp(0.5rem, 1.8vh, 0.9rem);
+      box-sizing: border-box;
+    }
+
+    .page-header {
+      padding: 0.15rem 0 0;
+      margin: 0;
+      flex-shrink: 0;
+    }
+
+    .page-title {
+      font-size: 1.3rem;
+      line-height: 1.05;
+    }
+
+    .nameBoxes {
+      gap: 0.4%;
+      width: 98%;
+      max-width: 98%;
+      height: auto;
+      padding: 0.35rem 0 0;
+      flex: 0 0 auto;
+      min-height: 0;
+      overflow: visible;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .nameBoxes :global(img) {
+      max-width: calc((100% - 20px) / 8);
+      min-width: 0;
+      width: auto;
+      height: auto;
+    }
+
+    .nameBoxes :global(img.active) {
+      opacity: 1;
+    }
+
+    .bottom-controls {
+      width: 100%;
+      max-width: 100%;
+      padding: 0.15rem 0.5rem 0.5rem;
+      gap: 6px;
+      flex: 1 1 auto;
+      min-height: 0;
+      justify-content: flex-start;
+    }
+
+    .textBelowTitle {
+      font-size: 12px;
+      padding: 0 4px;
+      margin: 0;
+      order: -2;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 100%;
+      flex-wrap: nowrap;
+      border-radius: 8px;
+      order: -1;
+      margin-bottom: 4px;
+    }
+
+    .nameInput {
+      min-width: 0;
+      flex: 1;
+      padding: 10px 8px;
+      font-size: 16px; /* Prevent zoom on iOS */
+    }
+
+    .searchBar-button {
+      padding: 12px 10px;
+      flex: 1;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    .searchBar-button.enter-btn {
+      flex: none;
+      white-space: nowrap;
+      min-width: 56px;
+    }
+
+    .searchBar-button.icon-btn {
+      flex: none;
+      min-width: 40px;
+    }
+
+    .location-info {
+      font-size: 11px;
+      order: -1;
+      margin-bottom: 2px;
+    }
+
+    .mobile-help {
+      display: block;
+      text-align: left;
+      padding: 0.75rem;
+      margin: 0.75rem 0 0;
+      background: #f8f8f8;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      line-height: 1.5;
+      color: #444;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .mobile-help p {
+      margin: 0.25rem 0;
+    }
+
+    .mobile-help strong {
+      color: #222;
+    }
+
+    .footer-note {
+      font-size: 9px;
+      padding: 0 8px;
+      margin-top: 0.25rem;
+    }
+
+    .about-trigger {
+      margin-top: auto;
+    }
+
+    .qr-popup-inner {
+      padding: 1rem;
+      max-width: 90%;
+    }
+
+    .qr-popup-inner img {
+      max-width: 80%;
+    }
+
+    .qr-popup-inner h2 {
+      font-size: 1rem;
+    }
+
+    .qr-description-two {
+      font-size: 0.7rem;
+    }
+
+    .copy-link-btn {
+      padding: 8px 10px;
+      font-size: 0.7rem;
+    }
+
+    .about-popup-inner {
+      padding: 1.2rem 1rem 1rem;
+    }
+
+    .about-popup-inner p {
+      font-size: 0.86rem;
+      line-height: 1.5;
+    }
+
+    .qr-buttons button {
+      justify-content: center;
+    }
+
+    .helpContainer {
+      display: none;
+      width: 180px;
+      font-size: 0.75rem;
+    }
+
+    .help-icon {
+      display: none;
+      font-size: 1em;
+    }
+  }
+
+  @media (max-width: 400px) {
+    .landsat-wrapper {
+      gap: 0.5rem;
+    }
+
+    .nameInput {
+      padding: 10px 6px;
+      font-size: 14px;
+    }
+
+    .searchBar-button {
+      padding: 10px 6px;
+    }
+
+    .searchBar-button.enter-btn {
+      min-width: 52px;
+      padding: 10px 8px;
+    }
+
+    .searchBar-button.icon-btn {
+      min-width: 38px;
+    }
+
+    .nameBoxes {
+      gap: 0.3%;
+    }
+
+    .nameBoxes :global(img) {
+      max-width: 14vw;
+      min-width: 35px;
+    }
+
+    .bottom-controls {
+      gap: 5px;
+    }
+
+    .textBelowTitle {
+      font-size: 12px;
+    }
+
+    .location-info {
+      font-size: 10px;
+    }
+
+    .help-icon {
+      font-size: 1em;
+    }
+
+    .page-title {
+      font-size: 1.1rem;
+    }
+  }
+
+  /* Extra small screens */
+  @media (max-width: 320px) {
+    .nameInput {
+      padding: 8px 4px;
+      font-size: 13px;
+    }
+
+    .searchBar-button {
+      padding: 8px 4px;
+    }
+
+    .nameBoxes :global(img) {
+      max-width: 16vw;
+      min-width: 30px;
+    }
+
+    .container {
+      gap: 0;
+    }
+  }
+
+  /* Touch device improvements */
+  @media (hover: none) and (pointer: coarse) {
+    .nameBoxes :global(img:hover) {
+      transform: none;
+    }
+
+    .nameBoxes :global(img:active) {
+      transform: scale(1.05);
+    }
+
+    .searchBar-button:active {
+      background-color: #c7c7c7;
+    }
+
+    .copy-link-btn:active {
+      background-color: #e0e0e0;
+    }
+
+    .help-icon:active {
+      opacity: 0.6;
+    }
+  }
+
+  /* Landscape mode on mobile */
+  @media (max-height: 500px) and (orientation: landscape) {
+    .landsat-wrapper {
+      min-height: auto;
+      padding: 8px 0;
+    }
+
+    .page-header {
+      padding: 0.25rem;
+    }
+
+    .page-title {
+      font-size: 1.1rem;
+    }
+
+    .nameBoxes {
+      padding: 1vh 0;
+      margin-top: 0;
+      flex: none;
+      min-height: 80px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .bottom-controls {
+      padding: 0.5rem 0;
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .textBelowTitle {
+      width: 100%;
+      order: -1;
+      margin-bottom: 4px;
+    }
+
+    .container {
+      margin-bottom: 4px;
+    }
+
+    .qr-popup-inner {
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+  }
+
+  /* Safe area inset for notched phones */
+  @supports (padding: max(0px)) {
+    .landsat-wrapper {
+      padding-left: max(12px, env(safe-area-inset-left));
+      padding-right: max(12px, env(safe-area-inset-right));
+    }
+
+    .bottom-controls {
+      padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+    }
+  }
+</style>
+
+<script
+  src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"
+  crossorigin="anonymous"
+  referrerpolicy="no-referrer"
+></script>
+
+<script
+  src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"
+  crossorigin="anonymous"
+  referrerpolicy="no-referrer"
+></script>
+
+<script define:vars={{ initialWordSerialized, initialSequenceSerialized, letterDataSerialized, badWordsSerialized, badWordResponsesSerialized, imagesBasePath }}>
+  const letterData = JSON.parse(letterDataSerialized);
+  const badWords = JSON.parse(badWordsSerialized);
+  const badWordResponses = JSON.parse(badWordResponsesSerialized);
+  const initialWord = JSON.parse(initialWordSerialized);
+  const initialSequence = JSON.parse(initialSequenceSerialized);
+  let imageSelected = false;
+  let selectedImgName = null;
+  let imageAnimationWaitTime = 150;
+  let currentImageUrl = window.location.href;
+  let activeErrorPopup = null;
+  let errorPopupHideTimeout = null;
+  let errorPopupRemoveTimeout = null;
+  let imageTransitionToken = 0;
+
+  function createLetterArrays() {
+    return {
+      A: [0,1,2,3,4], B: [0,1], C: [0,1,2], D: [0,1], E: [0,1,2,3],
+      F: [0,1], G: [0], H: [0,1], I: [0,1,2,3,4], J: [0,1,2],
+      K: [0,1], L: [0,1,2,3], M: [0,1,2], N: [0,1,2], O: [0,1],
+      P: [0,1], Q: [0,1], R: [0,1,2,3], S: [0,1,2], T: [0,1],
+      U: [0,1], V: [0,1,2,3], W: [0,1], X: [0,1,2], Y: [0,1,2],
+      Z: [0,1]
+    };
+  }
+
+  function getRandomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  function getRandomBadWordResponse() {
+    return badWordResponses[getRandomInt(0, badWordResponses.length - 1)];
+  }
+
+  function containsBadWords(text) {
+    const normalizedText = text.toLowerCase();
+    return badWords.some(badWord => {
+      const regex = new RegExp(`\\b${badWord}\\b`, 'i');
+      return regex.test(normalizedText);
+    });
+  }
+
+  function convertRange(value, r1, r2) {
+    return (value - r1[0]) * (r2[1] - r2[0]) / (r1[1] - r1[0]) + r2[0];
+  }
+
+  function pickLetterImage(letter, forcedIndex = null) {
+    const upperLetter = letter.toUpperCase();
+    const arrays = createLetterArrays();
+    const pool = arrays[upperLetter];
+    if (!pool) return 'a_0';
+
+    // If forcedIndex is provided and valid, use it
+    if (forcedIndex !== null && forcedIndex !== undefined && forcedIndex !== '') {
+      const idx = parseInt(forcedIndex);
+      if (!isNaN(idx) && pool.includes(idx)) {
+        return `${letter.toLowerCase()}_${idx}`;
+      }
+      // Invalid index - fallback to random
+    }
+
+    if (pool.length > 0) {
+      const index = getRandomInt(0, pool.length - 1);
+      const number = pool[index];
+      pool.splice(index, 1);
+      return `${letter.toLowerCase()}_${number}`;
+    }
+    return `${letter.toLowerCase()}_0`;
+  }
+
+  function parseSequenceForWord(word, sequence) {
+    if (!word || typeof word !== 'string' || !sequence || typeof sequence !== 'string') {
+      return null;
+    }
+
+    const normalizedSequence = sequence.replace(/\s+/g, '');
+    if (!normalizedSequence) return null;
+
+    const result = [];
+    let sequenceIndex = 0;
+
+    for (const char of word) {
+      if (char === ' ') {
+        result.push({ char: ' ', index: null });
+        continue;
+      }
+
+      const digit = normalizedSequence[sequenceIndex];
+      const index = digit !== undefined && /\d/.test(digit) ? parseInt(digit, 10) : null;
+      result.push({ char, index });
+
+      if (digit !== undefined) {
+        sequenceIndex += 1;
+      }
+    }
+
+    return result;
+  }
+
+  function buildSequenceFromImageCodes(imageCodes) {
+    return imageCodes
+      .filter((code) => code !== 'blank')
+      .map((code) => code.split('_')[1] || '0')
+      .join('');
+  }
+
+  function toggleImageActive(i, img) {
+    setTimeout(() => img.classList.toggle('active'), imageAnimationWaitTime * i);
+  }
+
+  function wait(ms) {
+    return new Promise((resolve) => {
+      setTimeout(resolve, ms);
+    });
+  }
+
+  async function animateExistingImagesOut(token) {
+    const nameBoxes = document.getElementById('nameBoxes');
+    if (!nameBoxes) return;
+
+    const existingChildren = Array.from(nameBoxes.children);
+    if (!existingChildren.length) {
+      nameBoxes.innerHTML = '';
+      return;
+    }
+
+    hideLocationInfo();
+    existingChildren.forEach((child) => child.classList.remove('selected'));
+
+    existingChildren.forEach((child, index) => {
+      if (token !== imageTransitionToken) return;
+      toggleImageActive(index, child);
+    });
+
+    await wait(existingChildren.length * imageAnimationWaitTime + 250);
+
+    if (token !== imageTransitionToken) return;
+    nameBoxes.innerHTML = '';
+  }
+
+  async function transitionToImages(input, parsedValue = null) {
+    const token = ++imageTransitionToken;
+    await animateExistingImagesOut(token);
+    if (token !== imageTransitionToken) return;
+    createImages(input, parsedValue);
+  }
+
+  async function clearImagesWithTransition() {
+    const token = ++imageTransitionToken;
+    await animateExistingImagesOut(token);
+  }
+
+  function showLocationInfo(name) {
+    const locationTitle = document.getElementById('locationTitle');
+    const locationCoordinates = document.getElementById('locationCoordinates');
+    if (!locationTitle || !locationCoordinates) return;
+
+    const letter = name.split('_')[0].toLowerCase();
+    const idx = parseInt(name.split('_')[1], 10);
+    const entries = letterData[letter];
+
+    if (entries && entries[idx]) {
+      const entry = entries[idx];
+      locationTitle.textContent = entry.location;
+
+      // Handle link: use # for invalid links
+      let linkUrl = entry.link;
+      if (linkUrl === 'https://none.com' || !linkUrl || linkUrl === '') {
+        linkUrl = '#';
+      }
+      locationTitle.href = linkUrl;
+
+      locationCoordinates.textContent = entry.coordinates;
+
+      // Handle maps: use Google Maps search for generic/unknown maps
+      let mapsUrl = entry.maps;
+      if (mapsUrl === 'https://maps.google.com' || !mapsUrl || mapsUrl === '') {
+        // Build Google Maps search URL from coordinates
+        const coords = entry.coordinates;
+        mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(coords)}`;
+      }
+      locationCoordinates.href = mapsUrl;
+    } else {
+      locationTitle.textContent = '';
+      locationTitle.href = '#';
+      locationCoordinates.textContent = '';
+      locationCoordinates.href = '#';
+    }
+  }
+
+  function hideLocationInfo() {
+    const locationTitle = document.getElementById('locationTitle');
+    const locationCoordinates = document.getElementById('locationCoordinates');
+    if (locationTitle) locationTitle.href = '#';
+    if (locationCoordinates) locationCoordinates.href = '#';
+    imageSelected = false;
+    selectedImgName = null;
+  }
+
+  function trimCanvas(canvas) {
+    const ctx = canvas.getContext('2d');
+    const { width, height } = canvas;
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const data = imageData.data;
+
+    let top = null, bottom = null, left = null, right = null;
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const alpha = data[4 * (y * width + x) + 3];
+        if (alpha > 0) {
+          if (top === null) top = y;
+          bottom = y;
+          if (left === null || x < left) left = x;
+          if (right === null || x > right) right = x;
+        }
+      }
+    }
+
+    if (top === null || left === null || right === null || bottom === null) return canvas;
+
+    const trimmedWidth = right - left + 1;
+    const trimmedHeight = bottom - top + 1;
+    const trimmedCanvas = document.createElement('canvas');
+    trimmedCanvas.width = trimmedWidth;
+    trimmedCanvas.height = trimmedHeight;
+    const trimmedCtx = trimmedCanvas.getContext('2d');
+    trimmedCtx.drawImage(canvas, left, top, trimmedWidth, trimmedHeight, 0, 0, trimmedWidth, trimmedHeight);
+    return trimmedCanvas;
+  }
+
+  function createImages(input, parsedValue = null) {
+    const nameBoxes = document.getElementById('nameBoxes');
+    const textBelowTitle = document.getElementById('textBelowTitle');
+    if (!nameBoxes) return;
+
+    nameBoxes.innerHTML = '';
+    if (textBelowTitle) textBelowTitle.classList.remove('active');
+
+    // Determine if using parsed value from URL or plain text input
+    const useParsed = parsedValue && Array.isArray(parsedValue);
+    const displayText = useParsed ? parsedValue.map(p => p.char).join('') : input;
+
+    const gap = convertRange(displayText.length, [1, 50], [1, 0.1]);
+    nameBoxes.style.gap = gap + '%';
+
+    let currentCustomLink = [];
+
+    for (let i = 0; i < displayText.length; i++) {
+      const char = displayText[i];
+
+      if (char === ' ') {
+        const blankDiv = document.createElement('div');
+        blankDiv.classList.add('blankDiv');
+        blankDiv.style.width = convertRange(displayText.length, [1, 50], [2, 5]) + '%';
+        nameBoxes.appendChild(blankDiv);
+        currentCustomLink.push('blank');
+      } else {
+        const img = document.createElement('img');
+        img.setAttribute('draggable', 'false');
+
+        // Get forced index if available from parsed value
+        const forcedIndex = useParsed ? parsedValue[i]?.index : null;
+        const name = pickLetterImage(char, forcedIndex);
+
+        img.src = `${imagesBasePath}/letter_${name}.webp`;
+        img.alt = name;
+
+        img.addEventListener('mouseover', () => {
+          if (!imageSelected) showLocationInfo(name);
+        });
+
+        // Only show on mouseover - clicking an image will pin the location info
+        img.addEventListener('click', () => {
+          const title = document.getElementById('locationTitle');
+          if (!title) return;
+
+          if (imageSelected && selectedImgName === name) {
+            // Click same image = deselect
+            img.classList.remove('selected');
+            imageSelected = false;
+            selectedImgName = null;
+            hideLocationInfo();
+          } else {
+            // Select this image
+            nameBoxes.querySelectorAll('img.selected').forEach(el => el.classList.remove('selected'));
+            img.classList.add('selected');
+            imageSelected = true;
+            selectedImgName = name;
+            showLocationInfo(name);
+          }
+        });
+
+        nameBoxes.appendChild(img);
+        currentCustomLink.push(name);
+        setTimeout(() => toggleImageActive(i, img), imageAnimationWaitTime);
+      }
+    }
+
+    generateShareUrl(displayText, currentCustomLink);
+  }
+
+  function generateShareUrl(displayText, customLink) {
+    const params = new URLSearchParams();
+    const trimmedDisplayText = displayText.trim();
+    const sequence = buildSequenceFromImageCodes(customLink);
+    if (sequence) {
+      params.set('v', sequence);
+    }
+
+    const pathname = trimmedDisplayText ? `/${encodeURIComponent(trimmedDisplayText)}` : '/';
+    const query = params.toString();
+    currentImageUrl = `${window.location.origin}${pathname}${query ? `?${query}` : ''}`;
+
+    const qrImg = document.getElementById('qr-img');
+    if (qrImg && typeof QRCode !== 'undefined' && currentImageUrl) {
+      // Generate QR code as data URL using Promise
+      QRCode.toDataURL(currentImageUrl, {
+        width: 200,
+        margin: 1,
+        color: {
+          dark: '#000000',
+          light: '#ffffff'
+        }
+      }).then((url) => {
+        if (url) {
+          qrImg.src = url;
+        }
+      }).catch(() => {});
+    }
+  }
+
+  function getExportName() {
+    const nameInput = document.getElementById('nameInput');
+    return (nameInput?.value || 'landsat-name') + '.png';
+  }
+
+  async function exportAsPng() {
+    const nameBoxes = document.getElementById('nameBoxes');
+    if (!nameBoxes || typeof html2canvas === 'undefined') return;
+
+    try {
+      const canvas = await html2canvas(nameBoxes, { backgroundColor: null, scale: 2 });
+
+      const trimmed = trimCanvas(canvas);
+      const link = document.createElement('a');
+      link.href = trimmed.toDataURL('image/png');
+      link.download = getExportName();
+      link.click();
+    } catch (e) {
+      console.error('Export failed:', e);
+    }
+  }
+
+  function downloadQrCode() {
+    const qrImg = document.getElementById('qr-img');
+    const nameInput = document.getElementById('nameInput');
+    if (!(qrImg instanceof HTMLImageElement) || !qrImg.src) return;
+
+    const link = document.createElement('a');
+    const baseName = (nameInput?.value || 'landsat-name').trim() || 'landsat-name';
+    link.href = qrImg.src;
+    link.download = `${baseName}-qr.png`;
+    link.click();
+  }
+
+  async function showQRPopup() {
+    const qrPopup = document.getElementById('qr-popup');
+    const finalImg = document.getElementById('final-img');
+    const nameBoxes = document.getElementById('nameBoxes');
+    if (!qrPopup) return;
+
+    qrPopup.classList.add('active');
+
+    if (finalImg && nameBoxes && typeof html2canvas !== 'undefined') {
+      try {
+        const canvas = await html2canvas(nameBoxes, { backgroundColor: null, scale: 2 });
+
+        const trimmed = trimCanvas(canvas);
+        finalImg.src = trimmed.toDataURL('image/png');
+        finalImg.style.display = 'block';
+      } catch (e) {
+        if (finalImg) finalImg.style.display = 'none';
+      }
+    }
+  }
+
+  function hideQRPopup() {
+    const qrPopup = document.getElementById('qr-popup');
+    if (qrPopup) qrPopup.classList.remove('active');
+  }
+
+  function showAboutPopup() {
+    const aboutPopup = document.getElementById('about-popup');
+    if (aboutPopup) aboutPopup.classList.add('active');
+  }
+
+  function hideAboutPopup() {
+    const aboutPopup = document.getElementById('about-popup');
+    if (aboutPopup) aboutPopup.classList.remove('active');
+  }
+
+  function hideHelpPopup() {
+    const helpContainer = document.getElementById('helpContainer');
+    if (helpContainer) helpContainer.classList.remove('active');
+  }
+
+  function copyLink() {
+    const copyText = document.getElementById('qr-copy-link-text');
+    const copyIcon = document.getElementById('qr-copy-link-icon');
+
+    navigator.clipboard.writeText(currentImageUrl).then(() => {
+      if (copyText) copyText.textContent = 'Link Copied';
+      if (copyIcon) copyIcon.className = 'fas fa-check';
+      setTimeout(() => {
+        if (copyText) copyText.textContent = 'Copy Link';
+        if (copyIcon) copyIcon.className = 'fas fa-link';
+      }, 3000);
+    }).catch(() => {});
+  }
+
+  function showErrorPopup(message) {
+    const inputPopup = document.getElementById('inputPopup');
+    const container = document.getElementById('container');
+    if (!inputPopup || !container) return;
+
+    if (!activeErrorPopup || !activeErrorPopup.isConnected) {
+      activeErrorPopup = inputPopup.cloneNode(true);
+      activeErrorPopup.removeAttribute('id');
+      activeErrorPopup.classList.remove('popup-template');
+      activeErrorPopup.classList.add('runtime-popup');
+
+      const popupText = activeErrorPopup.querySelector('#popupText');
+      if (popupText) {
+        popupText.removeAttribute('id');
+      }
+
+      container.appendChild(activeErrorPopup);
+    }
+
+    const popupText = activeErrorPopup.querySelector('p');
+    if (popupText) {
+      popupText.textContent = message;
+    }
+
+    if (errorPopupHideTimeout) {
+      clearTimeout(errorPopupHideTimeout);
+      errorPopupHideTimeout = null;
+    }
+
+    if (errorPopupRemoveTimeout) {
+      clearTimeout(errorPopupRemoveTimeout);
+      errorPopupRemoveTimeout = null;
+    }
+
+    requestAnimationFrame(() => {
+      if (activeErrorPopup) activeErrorPopup.classList.add('active');
+    });
+
+    errorPopupHideTimeout = setTimeout(() => {
+      if (activeErrorPopup) activeErrorPopup.classList.remove('active');
+      errorPopupRemoveTimeout = setTimeout(() => {
+        if (activeErrorPopup) activeErrorPopup.remove();
+        activeErrorPopup = null;
+        errorPopupRemoveTimeout = null;
+      }, 250);
+      errorPopupHideTimeout = null;
+    }, 5000);
+  }
+
+  function hideErrorPopup() {
+    if (errorPopupHideTimeout) {
+      clearTimeout(errorPopupHideTimeout);
+      errorPopupHideTimeout = null;
+    }
+
+    if (errorPopupRemoveTimeout) {
+      clearTimeout(errorPopupRemoveTimeout);
+      errorPopupRemoveTimeout = null;
+    }
+
+    if (activeErrorPopup) {
+      activeErrorPopup.remove();
+      activeErrorPopup = null;
+    }
+  }
+
+  async function enterButtonClick() {
+    const nameInput = document.getElementById('nameInput');
+    const textBelowTitle = document.getElementById('textBelowTitle');
+
+    if (!nameInput) return;
+
+    const input = nameInput.value.trim();
+
+    if (!input) {
+      await clearImagesWithTransition();
+      hideLocationInfo();
+      return;
+    }
+
+    const hasLetters = /^[ A-Za-z]+$/.test(input);
+    if (!hasLetters) {
+      showErrorPopup('Please only enter letters from A-Z');
+      return;
+    }
+
+    if (containsBadWords(input)) {
+      showErrorPopup(getRandomBadWordResponse());
+      return;
+    }
+
+    hideErrorPopup();
+    if (textBelowTitle) textBelowTitle.classList.remove('active');
+    await transitionToImages(input);
+  }
+
+  function init() {
+    const nameForm = document.getElementById('container');
+    const nameInput = document.getElementById('nameInput');
+    const qrCloseButton = document.getElementById('qr-close-btn');
+    const qrPopup = document.getElementById('qr-popup');
+    const copyLinkBtn = document.getElementById('qr-copy-link-btn');
+    const qrDownloadBtn = document.getElementById('qr-download-btn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const qrCodeBtn = document.getElementById('qrCodeBtn');
+    const aboutBtn = document.getElementById('aboutBtn');
+    const aboutPopup = document.getElementById('about-popup');
+    const aboutCloseBtn = document.getElementById('about-close-btn');
+    const helpIcon = document.getElementById('helpIcon');
+    const helpContainer = document.getElementById('helpContainer');
+    const helpCloseBtn = document.getElementById('help-close-btn');
+
+    // Filter input
+    if (nameInput) {
+      nameInput.addEventListener('input', () => {
+        nameInput.value = nameInput.value.replace(/[^a-zA-Z ]/g, '');
+      });
+    }
+
+    if (nameForm) {
+      nameForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        enterButtonClick();
+      });
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        hideQRPopup();
+        hideAboutPopup();
+        hideHelpPopup();
+      }
+    });
+
+    if (downloadBtn) {
+      downloadBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        exportAsPng();
+      });
+    }
+
+    if (qrCodeBtn) {
+      qrCodeBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        showQRPopup();
+      });
+    }
+
+    if (qrDownloadBtn) {
+      qrDownloadBtn.addEventListener('click', downloadQrCode);
+    }
+
+    if (qrCloseButton) {
+      qrCloseButton.addEventListener('click', hideQRPopup);
+    }
+
+    if (qrPopup) {
+      qrPopup.addEventListener('click', (e) => {
+        if (e.target === qrPopup) hideQRPopup();
+      });
+    }
+
+    if (aboutBtn) {
+      aboutBtn.addEventListener('click', showAboutPopup);
+    }
+
+    if (aboutCloseBtn) {
+      aboutCloseBtn.addEventListener('click', hideAboutPopup);
+    }
+
+    if (aboutPopup) {
+      aboutPopup.addEventListener('click', (e) => {
+        if (e.target === aboutPopup) hideAboutPopup();
+      });
+    }
+
+    if (copyLinkBtn) {
+      copyLinkBtn.addEventListener('click', copyLink);
+    }
+
+    // Help
+    if (helpIcon) {
+      helpIcon.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!helpContainer) return;
+
+        if (helpContainer.classList.contains('active')) {
+          hideHelpPopup();
+        } else {
+          const rect = helpIcon.getBoundingClientRect();
+          const viewportWidth = window.innerWidth;
+          const popupWidth = 220;
+
+          // Calculate left position
+          let leftPos;
+          if (rect.right + popupWidth + 10 < viewportWidth) {
+            leftPos = rect.right + 5;
+          } else {
+            leftPos = rect.left - popupWidth - 10;
+          }
+
+          // Position: top of popup aligns with top of icon, then transform up
+          helpContainer.style.left = leftPos + 'px';
+          helpContainer.style.top = rect.top + 'px';
+          helpContainer.style.transform = 'translateY(-100%)';
+          helpContainer.classList.add('active');
+        }
+      });
+    }
+
+    if (helpCloseBtn) {
+      helpCloseBtn.addEventListener('click', hideHelpPopup);
+    }
+
+    document.addEventListener('click', (e) => {
+      if (
+        helpContainer &&
+        helpContainer.classList.contains('active') &&
+        !e.target.closest('.helpContainer') &&
+        !e.target.closest('.help-icon')
+      ) {
+        hideHelpPopup();
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      const nameBoxes = document.getElementById('nameBoxes');
+      if (!nameBoxes) return;
+
+      if (e.target.tagName === 'IMG' && nameBoxes.contains(e.target)) return;
+      if (e.target.id === 'locationTitle') return;
+      if (e.target.id === 'locationCoordinates') return;
+      if (e.target.closest('.bottom-controls')) return;
+      if (e.target.closest('.helpContainer')) return;
+      if (e.target.closest('.help-icon')) return;
+
+      // Click outside clears selection but keeps location info visible
+      if (imageSelected) {
+        nameBoxes.querySelectorAll('img.selected').forEach(el => el.classList.remove('selected'));
+        imageSelected = false;
+        selectedImgName = null;
+      }
+    });
+
+    // Initial load - use the slug as the displayed text and optionally
+    // consume the v sequence across letters only, skipping spaces.
+    let wordToShow = initialWord;
+    let parsedForImages = null;
+
+    if (initialWord && typeof initialWord === 'string' && initialWord.trim()) {
+      parsedForImages = parseSequenceForWord(initialWord, initialSequence);
+    }
+
+    createImages(wordToShow, parsedForImages);
+    if (nameInput && wordToShow) {
+      nameInput.value = wordToShow;
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+</script>
+
+<!-- Font Awesome -->
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+  crossorigin="anonymous"
+  referrerpolicy="no-referrer"
+/>

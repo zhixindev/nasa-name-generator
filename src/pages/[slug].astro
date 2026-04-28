@@ -1,0 +1,34 @@
+---
+export const prerender = false;
+
+import BaseHead from '../components/BaseHead.astro';
+import LandsatName from '../components/LandsatName.astro';
+import { buildPagePathname } from '../lib/seo';
+
+function decodeSlug(value: string) {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+const slugParam = Astro.params.slug || '';
+const slug = decodeSlug(slugParam);
+const v = Astro.url.searchParams.get('v') || '';
+const pathname = buildPagePathname(slug);
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <BaseHead pathname={pathname} />
+  </head>
+  <body>
+    <LandsatName
+      imagesBasePath="/images/letters"
+      initialWord={slug || undefined}
+      initialSequence={v || undefined}
+    />
+  </body>
+</html>

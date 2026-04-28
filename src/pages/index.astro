@@ -1,0 +1,25 @@
+---
+// Force server-side rendering to access URL params
+export const prerender = false;
+
+import BaseHead from '../components/BaseHead.astro';
+import LandsatName from '../components/LandsatName.astro';
+import { buildPagePathname } from '../lib/seo';
+
+const v = Astro.url.searchParams.get('v') || '';
+const pathname = buildPagePathname();
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <BaseHead pathname={pathname} />
+  </head>
+  <body>
+    <LandsatName
+      imagesBasePath="/images/letters"
+      initialWord="landsat"
+      initialSequence={v || undefined}
+    />
+  </body>
+</html>

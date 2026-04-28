@@ -1,0 +1,64 @@
+---
+export interface Props {
+  pathname?: string;
+  pageTitle?: string;
+  pageDescription?: string;
+}
+
+const {
+  pathname = '/',
+  pageTitle,
+  pageDescription,
+} = Astro.props;
+
+const siteTitle = 'NASA Name Generator | Your Name in Landsat Tool';
+const siteDescription =
+  'Create a Landsat-style Earth name image with this NASA-inspired name generator. Type a name, preview Earth letter tiles, then download or share your result.';
+const siteUrl = import.meta.env.PUBLIC_SITE_URL || '';
+const defaultSocialImagePath = '/images/og-image.png';
+const socialImageAlt = 'NASA Earth Name Generator preview made from Landsat-style Earth letter tiles';
+
+const title = pageTitle || siteTitle;
+const description = pageDescription || siteDescription;
+
+function buildAbsoluteUrl(baseUrl: string, targetPath: string) {
+  if (!baseUrl) return '';
+
+  const normalizedBase = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+  const normalizedPath = targetPath.startsWith('/') ? targetPath.slice(1) : targetPath;
+  return new URL(normalizedPath, normalizedBase).toString();
+}
+
+const canonicalUrl = buildAbsoluteUrl(siteUrl, pathname);
+const socialImageUrl = buildAbsoluteUrl(siteUrl, defaultSocialImagePath) || defaultSocialImagePath;
+---
+
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>{title}</title>
+<meta name="description" content={description} />
+<meta property="og:type" content="website" />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:site_name" content={siteTitle} />
+<meta property="og:image" content={socialImageUrl} />
+<meta property="og:image:alt" content={socialImageAlt} />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={socialImageUrl} />
+<meta name="twitter:image:alt" content={socialImageAlt} />
+{canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
+{canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap"
+  rel="stylesheet"
+/>
+<script>
+  import '../scripts/third-party-loader.js';
+</script>
